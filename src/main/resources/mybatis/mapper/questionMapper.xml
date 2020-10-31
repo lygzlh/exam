@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "mybatis-3-mapper.dtd">
+<mapper namespace="cn.it.dao.QuestionMapper">
+<resultMap id="questionMapper" type="Question">
+	<id property="id" column="id"/>
+	<result property="title" column="title"/>
+	<result property="answerA" column="answerA"/>
+	<result property="answerB" column="answerB"/>
+	<result property="answerC" column="answerC"/>
+	<result property="answerD" column="answerD"/>
+	<result property="rightAnswer" column="rightAnswer"/>
+</resultMap>
+
+<insert id="rightQuestion">
+	insert into `right`(user,qid,rightOrWrong) values(#{user},#{qid},#{rightOrWrong})
+</insert>
+
+<update id="wrongQuestionHandle">
+	update `right` set rightOrWrong=1 where user=#{user} and qid=#{qid}
+</update>
+
+<select id="rwQuestionCount" resultType="java.lang.Integer">
+	SELECT count(`right`.id) FROM  `right` left join question on question.id=`right`.qid and
+	<if test="right != 0">
+	   `right`.rightOrWrong=1
+	</if>
+	<if test="wrong != 0">
+	   `right`.rightOrWrong=0
+	</if>
+	left join category on category.id=question.cid
+	where user=#{uid} and category.id=#{cid}
+</select>
+
+<select id="randomQuestion" resultMap="questionMapper">
+	SELECT q1.id,title,answerA,answerB,answerC,answerD,rightAnswer,solution,cid,cname FROM question as q1 
+	left join `right` on `right`.qid=q1.id and `right`.`user`=#{user}
+	join (select round(rand()*(select max(question.id) from question left join `right` on `right`.qid=question.id and `right`.`user`=#{user} LEFT join category on question.cid=category.id
+where `right`.id is null and cid=#{cate} )) as idd) as q2 on q1.id >= q2.idd
+	LEFT join category on q1.cid=category.id
+	where `right`.id is null
+	<if test='cate != 0'>
+		and cid=#{cate} 
+	</if>
+	limit 1
+</select>
+
+
+<select id="randomWrongQuestion" resultMap="questionMapper">
+SELECT q1.id,title,answerA,answerB,answerC,answerD,rightAnswer,solution,cid,cname FROM question as q1 
+	left join `right` on `right`.qid=q1.id and `right`.`user`=#{user}
+	join (select round(rand()*(select max(question.id) from question left join `right` on `right`.qid=question.id and `right`.`user`=#{user} LEFT join category on question.cid=category.id
+where  cid=#{cate} and `right`.rightOrWrong=0)) as idd) as q2 on q1.id >= q2.idd
+	LEFT join category on q1.cid=category.id
+	where `right`.rightOrWrong=0
+	<if test='cate != 0'>
+		and cid=#{cate} 
+	</if>
+	limit 1
+</select>
+
+<select id="findOneById" resultMap="questionMapper">
+	select * from question where id=#{id}
+</select>
+
+<delete id="resetQuestion">
+delete from `right`
+where id in (select * from ( SELECT `right`.id FROM `right` left join question on question.id=`right`.qid where cid=#{cate} and user=#{user}) as temp)
+</delete>
+
+<delete id="deleteCategory">
+DELETE category,question FROM category LEFT JOIN question ON category.id=question.cid WHERE category.id=#{cid}
+</delete>
+
+<select id="findAll" resultMap="questionMapper">
+	SELECT question.id,title,answerA,answerB,answerC,answerD,rightAnswer,solution,cid,cname FROM `question` 
+	LEFT join category on question.cid=category.id limit #{page},10
+</select>
+
+<update id="updataQuestion">
+	update question set title=#{question.title},answerA=#{question.answerA},answerB=#{question.answerB}
+	,answerC=#{question.answerC},answerD=#{question.answerD},rightAnswer=#{question.rightAnswer},solution=#{question.solution},
+	cid=#{question.cid}
+	 where id=#{question.id} 
+</update>
+
+<update id="changeCategory">
+	update category set cname=#{name} where id=#{cid} 
+</update>
+
+<insert id="insertQuestion">
+	insert into question(title,answerA,answerB,answerC,answerD,rightAnswer,solution,cid) values(
+	#{question.title},
+	#{question.answerA},
+	#{question.answerB},
+	#{question.answerC},
+	#{question.answerD},
+	#{question.rightAnswer},
+	#{question.solution},
+	#{question.cid}
+	)
+</insert>
+
+<delete id="deleteQuestion">
+	delete from question where id=${nid}
+</delete>
+
+<select id="findQuestionByTitle" resultMap="questionMapper">
+	SELECT question.id,title,answerA,answerB,answerC,answerD,rightAnswer,solution,cid,cname FROM `question` 
+	LEFT join category on question.cid=category.id  where title like concat('%',#{title},'%') 
+	<if test="cate != 0">
+		and cid=#{cate}
+	</if>
+	limit #{page},10
+</select>
+
+<select id="findAllCategory" resultType="cn.it.domain.Category">
+	select * from category
+</select>
+
+<insert id="insertCategory">
+	insert into category(cname) values(#{name})
+</insert>
+
+<select id='countQuestionNum' resultType="java.lang.Integer">
+	SELECT count(question.id) FROM `question` LEFT join category on question.cid=category.id where true
+	<if test="title != '' ">
+		and title like concat('%',#{title},'%') 
+	</if>
+	<if test="cate != 0">
+		and cid=#{cate}
+	</if>
+</select>
+
+<select id="countWrongQuestionNum" resultType="java.lang.Integer">
+	SELECT count(question.id) FROM `question` LEFT join category on question.cid=category.id 
+	left join `right` on `right`.qid=`question`.id and `right`.`user`=#{uid} and `right`.rightOrWrong=0 
+	where `right`.id is not null
+	<if test="title != '' ">
+		and title like concat('%',#{title},'%') 
+	</if>
+	<if test="cate != 0">
+		and cid=#{cate}
+	</if>
+</select>
+
+<select id='countFinishQuestion' resultType="java.lang.Integer">
+	SELECT count(question.id) FROM `question` LEFT join category on question.cid=category.id
+	Left join `right` on question.id=`right`.qid and `right`.user=#{uid}
+	 where `right`.id is not null 
+	<if	test='title != ""'>
+		and title like concat('%',#{title},'%') 
+	</if>
+	<if test="cate != 0">
+		and cid=#{cate}
+	</if>
+</select>
+
+<select id="findCategoryById" resultType="java.lang.String">
+	select cname from category where id=#{cid}
+</select>
+
+</mapper>

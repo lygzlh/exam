@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "mybatis-3-mapper.dtd">
+<mapper namespace="cn.it.dao.UserMapper">
+<resultMap id="userMapper" type="User">
+	<id property="id" column="id"/>
+	<result property="username" column="username"/>
+	<result property="password" column="password"/>
+	<result property="gender" column="gender"/>
+	<result property="nickname" column="nickname"/>
+	<result property="phone" column="phone"/>
+</resultMap>
+
+<select id='isExistsUser' resultType="java.lang.Integer">
+select EXISTS(select username from userinfo where username=#{username})
+</select>
+
+<select id="findAll" resultMap="userMapper">
+	select id,username,password,nickname,phone,case gender when 1 then '男'  when 2 then '女'  end as gender
+	 from userinfo  limit #{cpage},10
+</select>
+
+<select id="findAllByName" resultMap="userMapper">
+	select id,username,password,nickname,phone,case gender when 1 then '男'  when 2 then '女'  end as gender from userinfo 
+	where username like concat('%',#{name},'%') or nickname like concat('%',#{name},'%')
+	limit #{cpage},10
+</select>
+
+<select id="findOneByName" resultMap="userMapper">
+	select * from userinfo where username=#{username}
+</select>
+
+<insert id="addOne">
+	insert into userinfo(username,password,gender,phone,nickname) values (
+	#{user.username},
+	#{user.password},
+	#{user.gender},
+	#{user.phone},
+	#{user.nickname}
+	)
+</insert>
+
+<select id="countUserNum" resultType="java.lang.Integer">
+	SELECT count(id) FROM `userinfo` where true
+	<if test="name != '' ">
+		and username like concat('%',#{name},'%')  or nickname like concat('%',#{name},'%')
+	</if>
+</select>
+
+<delete id="delUserById">
+	delete from userinfo where id=#{cid}
+</delete>
+
+<update id='updateUser'>
+	update userinfo set username=#{user.username},password=#{user.password},gender=#{user.gender},nickname=#{user.nickname},phone=#{user.phone}
+	where id=#{user.id}
+</update>
+
+<update id="changeInfo">
+	update userinfo set nickname=#{nickname},phone=#{phone},gender=#{gender} where id=#{id}
+</update>
+
+<update id="adminChangePassword">
+	update admin set password=#{npwd} where username='root' 
+</update>
+
+<select id='adminPwdIsRight' resultType='cn.it.domain.Admin'>
+	select * from admin where username='root'
+</select>
+
+<update id="changePassword">
+	update userinfo set password=#{newPassword} where id=#{id}
+</update>
+
+</mapper>

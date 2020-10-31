@@ -1,0 +1,16 @@
+@charset "UTF-8";
+
+.btnss{
+	display:inline-block;
+	height:34px;
+	font-size:0.87rem;
+}
+
+.m-left{
+	margin-left:2px
+}
+
+.w100{
+	margin-left:20px;
+	width:100px;
+}
